@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>삼국시대 대서사시 : 나의 신분은?</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Nanum+Brush+Script&display=swap" rel="stylesheet">
+<style>
+:root{--cheong:#1f5c6b;--juk:#b23a2e;--hwang:#d9a441;--nok:#2f6b4f;--hanji:#f3ead7;--ink:#2a1d17;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:#2a1d17;color:var(--ink);font-family:'Nanum Myeongjo','Batang',serif;line-height:1.85;font-size:17px}
+.wrap{max-width:720px;margin:0 auto;padding:12px}
+.roof{height:14px;background:repeating-linear-gradient(90deg,var(--cheong) 0 24px,var(--juk) 24px 48px,var(--hwang) 48px 72px,var(--nok) 72px 96px)}
+.paper{background:var(--hanji);border:5px double var(--juk);padding:18px;margin-top:0}
+h1{font-family:'Nanum Brush Script','Nanum Myeongjo',serif;font-size:2.3rem;line-height:1.2;margin:6px 0;text-align:center;color:var(--juk)}
+.sub{text-align:center;margin:0 0 14px;color:#5a4636}
+button{font:inherit;cursor:pointer;border:2px solid var(--ink);background:#fff8e6;color:var(--ink);padding:10px 14px;border-radius:4px;text-align:left}
+button:hover:not(:disabled){background:var(--hwang)}
+button:focus-visible{outline:3px solid var(--cheong);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.cls{display:grid;gap:10px}
+.cls button{border-width:3px}
+.cls b{font-size:1.15rem}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.row button{text-align:center}
+.hud{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-bottom:10px;font-size:.9rem}
+.bar{height:11px;background:#d8c9a8;border:1px solid var(--ink)}
+.bar i{display:block;height:100%;transition:width .4s}
+.bag{margin:8px 0 12px;font-size:.92rem;min-height:2em;border-top:1px dashed #8a7358;padding-top:6px}
+.turn{font-size:.85rem;color:#6b5540}
+.scene{font-size:1.04rem;margin:8px 0 14px;white-space:pre-line}
+.ch{display:grid;gap:9px}
+.toast{margin-top:10px;font-weight:700;color:var(--cheong)}
+.sh{display:grid;gap:9px}
+.end p{margin:0 0 1.1em;opacity:0;transition:opacity 1.2s;text-indent:1em}
+.end p.on{opacity:1}
+.end h2{font-family:'Nanum Brush Script','Nanum Myeongjo',serif;font-size:2.1rem;text-align:center;margin:4px 0 14px;color:var(--juk)}
+.modal{position:fixed;inset:0;background:rgba(20,12,8,.8);display:none;align-items:center;justify-content:center;padding:16px;z-index:9}
+.modal.on{display:flex}
+.modal .paper{max-width:560px;max-height:85vh;overflow:auto;width:100%}
+.modal h3{margin:0 0 8px;color:var(--cheong)}
+.modal li{margin-bottom:6px}
+.dg{list-style:none;padding:0;margin:0;columns:1}
+.dg li{padding:3px 0;border-bottom:1px dotted #a58c68}
+.seen{color:var(--nok);font-weight:700}
+.nope{color:#8a7a68}
+.hide{display:none}
+@media (prefers-reduced-motion:reduce){.end p,.bar i{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="roof"></div>
+<main class="paper" id="app"></main>
+<div class="roof"></div>
+</div>
+<div class="modal" id="modal"><div class="paper" id="mbox"></div></div>
+<script>
+const $=s=>document.querySelector(s);
+const CN={천:'천민',평:'평민',귀:'귀족'};
+const START={천:[60,10,40,20],평:[70,40,45,25],귀:[80,300,40,40]};
+const ITEMS={herb:['약초🌿','아플 때 쓰면 좋아요'],scrap:['쇠토막🔩','대장간 바닥에서 주운 쇳조각'],shoes:['짚신👡','튼튼한 풀 신발'],rice:['주먹밥🍙','든든한 간식'],flute:['대나무 피리🎵','삐리리~ 소리가 나요'],iron:['철제 낫⚒️','단단한 가야 철로 만든 낫'],hemp:['삼베 한 필🧵','시원한 삼베 천'],grain:['잡곡 자루🌾','보리와 조가 가득'],incense:['향🪔','절에서 피우는 향'],silk:['비단옷🧣','반짝반짝 귀한 옷'],buddha:['금동 불상🪷','반짝이는 작은 부처님'],ring:['금반지💍','번쩍번쩍 금반지'],riceb:['쌀 한 섬🍚','귀한 쌀이 가득!'],guard:['호위무사🛡️','든든한 보디가드'],horse:['명마🐎','바람처럼 빠른 말']};
+const SHOP={천:{herb:3,scrap:5,shoes:2,rice:2,flute:3},평:{herb:8,iron:20,hemp:10,grain:8,incense:5},귀:{silk:60,buddha:120,ring:90,riceb:40,guard:100,horse:150}};
+const SHOPTXT={천:'장터 뒤쪽 구석에 낡은 좌판이 있어요. 헌 물건이 가득! 가진 돈은 겨우 몇 냥이에요. 뭘 사면 나중에 도움이 될까요?',평:'조밭마을 장터예요! 아줌마들 목소리가 쩌렁쩌렁~ 알뜰하게 필요한 걸 골라 볼까요?',귀:'비단 가게 주인이 대문 앞까지 보따리를 지고 왔어요. "도련님~ 오늘은 뭘로 드릴까요? 히히 다 귀한 거예요!"'};
+const SEQ=['s','h','s','q','s','s','q','h','s','q','s','s','q','h','s'];
+const HEAD=['체력','돈','마음씨','똑똑함'];
+const SC={
+천:[
+{x:'꼬끼오~ 닭이 울기도 전에 대감마님 댁 마당을 쓸어야 해요. 당신은 노비 "돌이"! 옆에서 단짝 꼬질이가 졸다가 빗자루를 끌어안고 쓰러졌어요.\n"으아악 내 코!" 히히, 오늘도 시끌벅적하겠네요.',c:[
+{t:'꼬질이를 깨워 같이 쓸며 낄낄댄다.',e:[-3,0,5,0],m:'꼬질이와 낄낄대며 마당을 쓸던 아침이 있었고'},
+{t:'혼자 조용히 열심히 쓴다.',e:[-5,1,2,3],m:'묵묵히 마당을 쓸며 참는 법을 배웠고'},
+{t:'몰래 구석에서 낮잠을 잔다.',e:[8,0,-5,0],m:'몰래 낮잠 자다 들킬 뻔한 날도 있었고'}]},
+{x:'심부름하러 간 장터에서 쿵! 누가 넘어졌어요. 앗, 귀족 집 아기씨 "연화"예요!\n비단신발 한 짝이 진흙탕에 퐁당! 연화는 울먹이고, 사람들은 구경만 해요.',c:[
+{t:'내 짚신을 벗어 건넨다.',n:'shoes',e:[0,0,10,0],f:'love',m:'진흙탕에서 짚신을 건넨 날, 연화 아기씨와 인연이 시작되었고'},
+{t:'피리를 불어 연화를 웃게 해 준다.',n:'flute',e:[0,0,8,3],f:'love',m:'피리 소리로 아기씨를 웃게 한 날부터 둘만의 비밀이 생겼으며'},
+{t:'맨손으로 진흙 속 신발을 건져 닦아 준다.',e:[-3,0,5,0],m:'맨손으로 신발을 건져 냈지만 눈도 못 마주쳤고'},
+{t:'혼날까 봐 모른 척 지나간다.',e:[0,0,-8,0],m:'넘어진 아기씨를 못 본 척한 일이 마음에 남았고'}]},
+{x:'큰일이에요! 사납기로 소문난 대감마님이 열이 펄펄 끓어 쓰러졌어요.\n의원님은 "나도 몰라~" 하며 도망가 버렸어요. 모두 발만 동동!',c:[
+{t:'약초를 달여 곁에 놓는다.',n:'herb',e:[-5,0,12,5],f:'cure',m:'무서운 대감마님을 약초로 살려 낸 일이 있었고'},
+{t:'주먹밥으로 따뜻한 죽을 끓여 준다.',n:'rice',e:[-3,0,8,0],m:'주먹밥 죽을 끓여 대감을 돌본 밤이 있었으며'},
+{t:'도망간 의원님을 쫓아가 매달린다.',e:[-10,0,6,6],m:'의원님 옷자락에 매달려 사정하던 날이 있었고'},
+{t:'무서워서 모른 척한다.',e:[0,0,-10,0],m:'아픈 사람을 모른 척했던 일이 부끄러웠고'}]},
+{x:'가야 대장간! 불꽃이 쾅쾅 튀고 대장장이 쇠돌 아저씨가 외쳐요.\n"풀무질할 녀석 어디 갔어!" 쇠로 낫도 만들고 칼도 만드는 신기한 곳이에요.',c:[
+{t:'쇠토막을 보이며 "저도 만들고 싶어요!" 외친다.',n:'scrap',e:[-5,0,3,15],f:'forge',m:'쇠토막을 들고 대장장이에게 매달려 철 다루는 법을 배웠고'},
+{t:'풀무질하며 눈으로 기술을 훔친다.',e:[-10,0,0,8],f:'forge',m:'풀무질하며 눈으로 쇠 다루는 법을 훔쳐 배웠으며'},
+{t:'뜨거워서 도망친다.',e:[0,0,0,0],m:'뜨거운 불꽃이 무서워 도망친 날도 있었고'}]},
+{x:'겨울이 왔어요. 돌을 날라 성을 쌓는 곳은 눈보라 때문에 코가 꽁꽁!\n꼬질이가 입술이 파래져서 비틀거려요.',c:[
+{t:'주먹밥을 반으로 쪼개 꼬질이에게 준다.',n:'rice',e:[-8,0,12,0],m:'꼬질이와 주먹밥을 반으로 나눠 먹던 겨울밤이 있었고'},
+{t:'둘이 꼭 붙어 불을 같이 쬔다.',e:[-12,0,8,0],m:'꼬질이와 언 손을 맞잡고 겨울을 났으며'},
+{t:'혼자 쉬지 않고 돌을 나른다.',e:[-25,5,-5,0],m:'혼자만 살겠다고 몸을 혹사했지만'}]},
+{x:'앗, 꼬질이가 몰래 도망치다 붙잡혀 곤장을 맞게 됐어요! "아야야야!"\n단짝이 벌을 받아요. 어떡하죠?',c:[
+{t:'"제가 대신 맞을게요!" 앞으로 나선다.',e:[-20,0,15,0],m:'꼬질이 대신 매를 맞겠다고 나선 날, 단짝은 평생 친구가 되었고'},
+{t:'밤에 몰래 약초를 발라 준다.',n:'herb',e:[-3,0,10,0],m:'맞은 꼬질이 등에 약초를 발라 주던 밤이 있었으며'},
+{t:'눈을 질끈 감고 돌아선다.',e:[0,0,-12,0],m:'벌받는 단짝에게서 눈을 돌린 아픈 기억도 있었고'}]},
+{x:'달 밝은 밤, 연화 아기씨가 담 너머로 속삭였어요.\n"돌아, 아버지가 나를 먼 나라로 시집보내려 해… 같이 도망가 줄래?"\n심장이 두근두근, 쿵쾅쿵쾅!',c:[
+{t:'"좋아요! 함께 달빛 도망 가요!"',n:'love',e:[0,0,5,0],m:'달빛 아래서 연화와 손가락을 걸었고'},
+{t:'"신분이 달라서 안 돼요…" 눈물을 삼킨다.',e:[0,0,3,0],m:'눈물을 삼키며 마음을 접으려 했고'},
+{t:'대감마님께 슬쩍 이른다.',e:[0,5,-15,0],m:'비밀을 이르고 얻은 몇 푼이 오히려 무거웠고'}]},
+{x:'드디어 봄! 인생에서 가장 큰 갈림길이에요.\n담 너머에는 자유가, 마당에는 익숙한 빗자루가 있어요. 당신의 선택은?',c:[
+{t:'밤안개를 뚫고 연화의 손을 잡고 도망친다!',n:'love',e:[-10,0,0,0],f:'flee',m:'그리고 마침내 연화의 손을 잡고 달빛 속으로 도망쳤습니다'},
+{t:'대감마님께 "이제 자유롭게 해 주세요!" 부탁한다.',n:'cure',e:[0,0,10,0],f:'freed',m:'대감마님 앞에 무릎 꿇자 노비 문서가 풀렸습니다'},
+{t:'쇠돌 아저씨의 대장간으로 달려간다.',n:'forge',e:[0,0,0,5],m:'대장간으로 달려가 쇠 두드리는 사람이 되기로 했습니다'},
+{t:'마당을 지키기로 한다.',e:[0,0,0,0],m:'결국 익숙한 마당을 지키기로 했습니다'}]}],
+평:[
+{x:'조밭마을에 흉년이 들었어요. 벼는 비쩍 마르고 곳간은 텅텅!\n그런데 세금을 걷는 관리가 말을 타고 으스대며 나타났어요. "나라에 바칠 곡식 내놓으시오!"',c:[
+{t:'몰래 곡식 한 항아리를 숨긴다.',e:[0,10,-6,0],f:'hid',m:'곡식 한 항아리를 몰래 숨기고 가슴 졸이던 날이 있었고'},
+{t:'배고파도 약속대로 낸다.',e:[-5,-10,8,0],m:'배고파도 세금을 꼬박꼬박 낸 정직한 사람이었고'},
+{t:'넉살 좋게 웃으며 말고삐를 잡아 준다.',e:[0,5,-3,5],m:'관리의 말고삐를 잡고 넉살 좋게 웃으며 위기를 넘겼고'}]},
+{x:'개울가에서 단짝 쑥이가 풍덩풍덩 빨래를 해요. 쑥이는 마을 방귀 대장!\n그런데 오늘따라 쑥이를 보면 마음이 몽글몽글해요.',c:[
+{t:'삼베 한 필로 수건을 만들어 선물한다.',n:'hemp',e:[0,0,8,0],f:'friend',m:'삼베 수건 한 장에 마음을 담아 쑥이에게 선물했고'},
+{t:'물장구를 쳐서 쑥이를 홀딱 젖게 한다.',e:[0,0,4,0],f:'friend',m:'개울에서 쑥이와 물장구치며 깔깔 웃던 여름이 있었으며'},
+{t:'말도 못 하고 물만 푼다.',e:[0,0,0,3],m:'하고 싶은 말을 개울물에 흘려보낸 날도 있었고'}]},
+{x:'나라가 궁궐 성을 쌓으라고 마을 사람들을 불렀어요. 땀이 뻘뻘!\n그런데 어이쿠! 큰 돌이 와르르 무너지며 옆의 아저씨를 덮쳤어요!',c:[
+{t:'몸을 던져 돌을 밀어낸다!',e:[-30,0,15,0],f:'save',m:'무너지는 돌 앞에서 아저씨를 끌어낸 날이 있었고'},
+{t:'감독관에게 달려가 도움을 부른다.',e:[-5,0,5,3],m:'감독관을 불러 아저씨를 구한 일이 있었으며'},
+{t:'무서워서 뒤로 물러난다.',e:[0,0,-12,0],m:'아저씨를 두고 물러섰던 기억을 지우지 못했고'}]},
+{x:'이웃집 순이 할머니가 배가 고파 끙끙 앓아누웠어요.\n"콩아… 할머니는 괜찮다…" 하지만 하나도 안 괜찮아 보여요.',c:[
+{t:'잡곡 자루를 풀어 따끈한 죽을 끓여 드린다.',n:'grain',e:[0,0,12,0],m:'잡곡 죽을 끓여 순이 할머니를 일으켜 세웠고'},
+{t:'약초를 달여 드린다.',n:'herb',e:[-3,0,10,3],m:'약초를 달여 할머니의 기침을 멎게 했으며'},
+{t:'산에 가서 나물을 캐 온다.',e:[-8,0,6,3],m:'할머니를 위해 산을 헤매며 나물을 캐던 날이 있었고'},
+{t:'내 코가 석 자라 모른 척한다.',e:[0,0,-8,0],m:'앓는 할머니를 모른 척한 부끄러움이 남았고'}]},
+{x:'전쟁이다! 이웃나라가 쳐들어와서 마을 청년들이 군인으로 불려 가요.\n무서워서 다리가 후들후들… 당신에게도 소집장이 왔어요.',c:[
+{t:'철제 낫을 갈아 무기로 삼고 전쟁터에 나선다.',n:'iron',e:[-15,0,8,8],f:'war',m:'철제 낫을 벼린 무기로 전쟁터의 맨 앞에 섰고'},
+{t:'맨몸으로 대열을 따라간다.',e:[-25,0,5,0],m:'맨몸으로 전쟁터를 겪으며 용기를 배웠으며'},
+{t:'몰래 돈을 주고 빠진다.',e:[0,-15,-10,0],m:'돈으로 군대를 피한 부끄러움을 숨겼고'}]},
+{x:'겨울 식량이 바닥났어요! 마을 부자 장 부자가 능글맞게 웃으며 말해요.\n"쌀 빌려줄까? 이자는 쪼끔만 받지~" (이자가 쪼끔이 아니에요 😱)',c:[
+{t:'쌀을 빌려 겨울을 난다.',e:[10,20,0,0],f:'debt',m:'빚으로 쌀을 빌려 겨울을 났지만 빚의 그림자가 드리웠고'},
+{t:'향을 들고 절에 가서 정성껏 기도한다.',n:'incense',e:[0,-5,10,8],f:'temple',m:'절에서 향을 피우며 마음을 의지했으며'},
+{t:'산나물로 꾹 참고 버틴다.',e:[-15,0,3,3],m:'산나물 한 줌으로 겨울을 버티는 법을 배웠고'}]},
+{x:'가을 잔치날! 씨름 대회에서 우승하면 쌀 한 가마니가 상품이에요.\n상대는 소문난 장사 "황소 아저씨". 배가 남산만 해요 😆',c:[
+{t:'힘껏 정면 승부!',e:[-10,15,5,0],m:'씨름판에서 황소 아저씨를 넘어뜨리자 온 마을이 환호했고'},
+{t:'꾀를 써서 발을 슬쩍 건다.',e:[-3,10,0,8],m:'꾀를 써서 황소 아저씨를 넘어뜨려 박수를 받았고'},
+{t:'구경만 하며 부러워한다.',e:[0,0,0,0],m:'구경만 하며 부러워한 날도 있었고'}]},
+{x:'봄볕이 초가지붕에 내려앉았어요. 이제 어른이 되었어요.\n앞으로 어떤 삶을 살고 싶나요?',c:[
+{t:'쑥이에게 용기 내어 청혼! 작은 혼례를 올린다.',n:'friend',e:[5,-5,5,0],f:'wed',m:'삼베옷을 입고 단짝과 혼례를 올렸습니다'},
+{t:'가진 것을 털어 탑 세우는 일에 보탠다.',n:'incense',e:[0,-30,15,5],f:'tower',m:'가진 것을 모두 털어 탑 세우는 일에 보탰습니다'},
+{t:'전쟁에서 세운 공으로 관리가 되겠다고 청한다.',n:'war',e:[0,0,5,5],f:'rank',m:'전쟁의 공을 내세워 당당히 관리가 되기를 청했습니다'},
+{t:'초가집에서 조용히 농사를 짓는다.',e:[0,0,0,0],m:'초가집에서 농사를 지으며 조용히 살기로 했습니다'}]}],
+귀:[
+{x:'눈이 번쩍! 쌀밥에 비단 이불, 시중드는 하인들까지! 당신은 귀족 집 도련님 "연우"예요.\n그런데 오늘은 귀족 회의 날. 박 집사가 속삭여요. "도련님, 오늘 세 가문이 크게 싸웁니다. 줄을 잘 서야 해요!"',c:[
+{t:'힘센 가문 편에 서서 찬성한다.',e:[0,30,-6,5],f:'plot',m:'힘센 가문과 손잡고 회의의 흐름을 바꿨고'},
+{t:'중립을 지키며 양쪽 말을 다 적어 둔다.',e:[0,0,5,12],m:'중립을 지키며 양쪽의 속마음을 꿰뚫어 보았으며'},
+{t:'왕의 뜻을 헤아려 왕 편에 선다.',e:[0,0,8,8],f:'king',m:'일찍부터 왕의 곁에 서기로 마음먹었고'}]},
+{x:'이웃나라에서 결혼하자는 편지가 왔어요. 나라끼리 친해지려고 하는 결혼이에요.\n신부 얼굴은 한 번도 못 봤는데, 금 장신구 선물 상자만 대문 앞에 가득!',c:[
+{t:'가문을 위해 결혼을 받아들인다.',e:[0,80,-5,5],f:'marry',m:'나라끼리 친해지려는 결혼에 도장을 찍었고'},
+{t:'"싫어요!" 거절하고 혼자 욕을 먹는다.',e:[-5,-20,10,0],m:'결혼을 거절하고 가문의 잔소리를 혼자 감당했으며'}]},
+{x:'오늘은 잔치! 새 쌀로 지은 쌀밥, 금 장신구가 촛불에 반짝반짝~\n그런데 마을에는 굶는 사람이 많다는 소문이 들려요.',c:[
+{t:'잔치를 계속한다. 오늘만 사는 거야!',e:[5,-40,-10,0],f:'greed',m:'쌀밥과 금 장신구에 취한 밤이 이어졌고'},
+{t:'쌀 한 섬을 풀어 굶주린 백성에게 나눠 준다.',n:'riceb',e:[-5,-5,15,3],m:'쌀 한 섬을 풀어 배고픈 백성을 먹였고'},
+{t:'잔치를 줄이고 조금만 나눠 준다.',e:[-5,-20,10,3],m:'잔치를 줄이고 가진 것을 조금씩 나눴으며'}]},
+{x:'신나는 사냥대회! 맞수는 잘난 척쟁이 조만수!\n"흥, 연우야, 너 말 탈 줄은 아냐?" 얄미워 죽겠어요 😤',c:[
+{t:'명마를 타고 바람처럼 달려 1등!',n:'horse',e:[-5,60,8,5],m:'명마를 타고 만수를 제치고 1등을 한 날이 있었고'},
+{t:'호위무사에게 몰래 대신 사냥시킨다.',n:'guard',e:[0,40,-12,0],m:'호위무사에게 대신 사냥시켜 이겼지만 마음은 찜찜했고'},
+{t:'걸어서 도전하다 진흙탕에 풍덩!',e:[-10,0,0,5],m:'진흙탕에 풍덩 빠져 온 마을의 웃음거리가 된 날도 있었고'}]},
+{x:'헉! 라이벌 조 대감이 당신을 반역자로 몰려는 가짜 편지를 숨겨 둔 걸 알았어요!\n"흐흐, 이 편지가 왕께 가면 끝이지~"',c:[
+{t:'증거를 모아 왕께 먼저 고발한다.',n:'king',e:[0,0,5,12],f:'rule',m:'가짜 편지의 비밀을 먼저 밝혀 왕의 믿음을 얻었고'},
+{t:'금반지를 쥐여 주고 입을 막는다.',n:'ring',e:[0,-40,-12,0],f:'greed',m:'금반지로 입을 막았지만 마음은 불편했으며'},
+{t:'못 본 척 눈을 감는다.',e:[0,0,-5,0],f:'weak',m:'위험이 다가오는데도 눈을 감았고'}]},
+{x:'한밤중 산길, 도적떼가 우르르! "가진 거 다 내놔라!"\n비단옷이 달빛에 번쩍번쩍 😨',c:[
+{t:'호위무사가 칼을 뽑아 막아 준다!',n:'guard',e:[0,0,5,0],m:'호위무사가 도적떼를 막아 준 밤을 잊지 못하고'},
+{t:'비단옷을 벗어 던지고 도망친다.',n:'silk',e:[-5,0,-3,3],m:'비단옷을 던지고 도망쳐 목숨을 건졌으며'},
+{t:'도망치다 넘어져 데굴데굴 굴러 내린다.',e:[-20,-40,-5,0],m:'도적을 피해 데굴데굴 굴러 내린 날도 있었고'}]},
+{x:'절에 갔더니 스님이 말해요. "백성의 마음을 하나로 모으려면 부처님 모습을 만들어 모셔야 해요."',c:[
+{t:'금동 불상을 모델로 큰 금동 부처님을 만든다.',n:'buddha',e:[0,-50,18,5],f:'built',m:'금동 부처님을 만들어 백성의 마음을 하나로 모았고'},
+{t:'비단옷을 시주하고 기도만 올린다.',n:'silk',e:[0,-5,8,0],m:'비단옷을 시주하며 기도로 마음을 달랬으며'},
+{t:'정치가 먼저라며 돌려보낸다.',e:[0,0,-3,3],m:'정치가 먼저라며 스님을 돌려보냈고'}]},
+{x:'마지막 귀족 회의! 대청마루가 쥐 죽은 듯 조용해요. 왕이 당신을 똑바로 보며 물었어요.\n"이 나라를 어디로 이끌 텐가?"',c:[
+{t:'모든 가문을 설득해 왕과 함께 나라를 다스린다.',n:'king',e:[0,0,5,10],f:'rule',m:'귀족들을 설득해 왕 곁에서 나라를 다스렸습니다'},
+{t:'이웃나라와의 인연으로 외교를 이끈다.',n:'marry',e:[0,10,0,5],m:'이웃나라와의 인연으로 외교의 길을 열었습니다'},
+{t:'기와집 깊숙이 들어가 가문만 지킨다.',e:[0,5,-5,0],m:'기와집 깊숙이 들어가 가문만 지키기로 했습니다'}]}]};
+const QZ=[
+['한 마을에 삼베옷을 입은 가족과, 비단옷에 금·은 장신구를 단 가족이 있어요. 두 가족의 신분을 순서대로 알맞게 짝지은 것은?',['평민 - 귀족','귀족 - 평민','평민 - 천민','천민 - 평민'],'삼베옷은 평민, 비단과 금·은 장신구는 귀족이에요.'],
+['어느 집 밥상에는 보리와 조가 올라오고, 쌀밥은 구경하기 힘들어요. 쌀이 귀한 곡식이었다는 점을 떠올리면 이 가족은?',['평민','왕족','귀족','높은 관리'],'평민은 주로 보리, 조 같은 잡곡을 먹었어요.'],
+['기와를 얹은 크고 멋진 집이 있어요. 이런 집에 살았을 가능성이 가장 높은 사람은?',['왕족과 귀족','농사짓는 평민','노비','가난한 어부'],'지배층은 기와집, 평민은 주로 초가집에서 살았어요.'],
+['왕이 백성의 마음을 하나로 모으고 왕의 힘을 키우려고 나라 곳곳에 절과 탑, 불상을 만들게 했어요. 이때 받아들인 종교는?',['불교','유교','도교','무속 신앙'],'삼국은 불교를 받아들였어요.'],
+['고구려의 불상으로, 몸에 "연가 7년"이라는 글이 새겨진 것은?',['금동 연가 7년명 여래 입상','금동 미륵보살 반가 사유상','백제 금동 대향로','신라 금관'],'금동 연가 7년명 여래 입상은 고구려의 불상이에요.'],
+['부여에 있는 이 탑은 백제 사람들이 다섯 층으로 쌓아 올린 돌탑이에요. 이름은?',['정림사지 오층 석탑','불국사 다보탑','황룡사 구층 목탑','분황사 모전 석탑'],'부여 정림사지 오층 석탑은 백제의 탑이에요.'],
+['삼국과는 다른 나라로, 철로 무기와 갑옷을 만들고 철을 수출하며 번성한 나라는?',['가야','발해','부여','옥저'],'가야는 철 다루는 기술이 뛰어났어요.'],
+['고분에서 말 탄 사람, 집, 배 모양의 토기가 나왔어요. 이런 토기에서 알 수 있는 것은?',['그때 사람들의 생활 모습과 생각','그때 왕의 이름','전쟁이 일어난 날짜','다른 나라의 이름'],'고분의 토기로 그때 생활 모습을 짐작할 수 있어요.'],
+['대부분 농사를 지으며 나라에 세금을 내고, 궁궐과 성을 쌓는 일에 불려 간 사람들은?',['평민','천민','귀족','왕족'],'평민은 세금을 내고 성 쌓는 일에 동원되었어요.'],
+['A는 귀족의 땅에서 농사를 짓고 주인집의 여러 가지 일도 해요. A의 신분은?',['천민(노비)','평민','귀족','관리'],'천민은 대부분 노비였어요.'],
+['다음 중 알맞지 않은 설명은?',['천민은 귀족과 함께 높은 관리가 되었다','귀족은 많은 땅과 노비를 가졌다','평민은 나라에 세금을 냈다','천민은 주인집 일을 했다'],'높은 관리가 되어 중요한 일을 정한 것은 귀족이에요.'],
+['삼국 사람들의 생활 모습으로 알맞지 않은 것은?',['평민은 대부분 기와집에서 살았다','평민은 주로 삼베옷을 입었다','왕족과 귀족은 금과 은 장신구로 꾸몄다','지배층은 쌀을 주로 먹었다'],'평민은 주로 초가집에서 살았어요.'],
+['삼국의 왕이 불교를 받아들인 까닭으로 알맞은 것은?',['백성의 마음을 하나로 모아 왕의 힘을 키우려고','귀족의 힘을 키워 왕을 몰아내려고','농사를 더 잘 지으려고','이웃나라와 전쟁을 막으려고'],'불교로 백성의 마음을 모아 왕의 힘을 키우려고 했어요.'],
+['"저고리와 바지", "쌀·보리·조", "기와집·초가집"은 각각 어떤 생활에 해당할까요?',['의생활 - 식생활 - 주생활','식생활 - 의생활 - 주생활','주생활 - 식생활 - 의생활','의생활 - 주생활 - 식생활'],'옷은 의생활, 먹는 것은 식생활, 사는 집은 주생활이에요.'],
+['불상, 탑, 철 이야기를 나라와 바르게 짝지은 것은?',['불상-고구려, 탑-백제, 철-가야','불상-백제, 탑-고구려, 철-가야','불상-고구려, 탑-가야, 철-백제','불상-가야, 탑-백제, 철-고구려'],'연가 7년명 불상은 고구려, 정림사지 탑은 백제, 철은 가야예요.'],
+['철제 갑옷과 무기를 많이 만들어 수출까지 한 나라가 번성한 가장 큰 까닭은?',['철을 다루는 기술이 뛰어났기 때문','쌀농사가 가장 잘되었기 때문','불교를 처음 믿었기 때문','귀족이 가장 많았기 때문'],'가야는 철 다루는 기술이 뛰어난 나라였어요.']];
+const E={
+천:[
+['약초가 바꾼 운명','약초 향이 대감마님의 방에 퍼진 새벽, 거짓말처럼 열이 내렸어요. 마님은 오랫동안 당신을 바라보다가 노비 문서에 붓을 대고 종이를 쭈욱 그었어요.','훗날 당신은 장터를 누비는 큰 상단의 주인이 되었어요. 사람들은 속삭였어요. "저분이 약초 한 줌으로 운명을 바꾼 분이래!"'],
+['달빛 도망','어어…? 내 마음이… 왜 이래… 노비였던 당신은 지배층의 눈을 피해 밤안개를 뚫고 연화의 손을 꼭 잡고 담을 넘었어요. 뒤에서 초가집 부모님의 눈물 어린 기도 소리가 들리는 것 같았어요.','깊은 산속 가야의 철기 마을에 도착한 두 사람은 마침내 신분의 사슬을 벗어 던졌어요. 사람들은 오래오래 이야기해요. 사슬을 끊고 스스로 삶을 연 용감한 연인의 이야기를…'],
+['가야의 대장장이','뜨거운 대장간에서 당신은 쇳덩이를 두드리고 또 두드렸어요. 굳은살 박인 손이 어느새 철의 마음을 읽게 되었어요.','가야의 철 다루는 솜씨는 당신의 망치 끝에서 이어졌고, 당신은 이름난 평민 장인이 되었어요. 불꽃 앞에서 당신은 처음으로 활짝 웃었어요.'],
+['마당지기의 일생','당신은 끝내 신분의 사슬을 벗지 못했어요. 하지만 매일 아침 쓸어 낸 마당만큼은 한 번도 흐트러진 적이 없었어요.','세월이 흘러 손주를 품에 안고 눈을 감던 날, 초가집 처마에는 따뜻한 겨울 햇살이 머물렀어요. 조용하고 충직한 일생이었어요.'],
+['차가운 눈밤','성을 쌓던 겨울, 얼어붙은 돌을 나르던 당신의 숨이 점점 가늘어졌어요.','눈이 소복소복 내리던 밤, 이름 없는 영혼은 이슬처럼 사라졌어요. 이 이야기를 읽는 우리가 그 이름 없는 사람들을 기억해요.']],
+평:[
+['초가집의 약속','삼베옷을 입고 마주 선 작은 혼례. 초가집 아궁이는 임금님 방보다 따뜻했어요.','잡곡밥 한 그릇도 둘이 나누면 쌀밥 같았어요. 소박하지만 단단한 행복이 초가지붕 위로 피어올랐어요.'],
+['칼날 위의 영웅','철제 무기를 쥔 손이 덜덜 떨렸지만 당신은 전쟁터의 맨 앞에 섰어요. 함성 속에서 당신의 이름이 처음 불렸어요.','전쟁이 끝난 뒤 왕은 당신을 불러 높은 벼슬을 내렸어요. "평민 출신 대장군"이라는 이름이 온 나라에 퍼졌어요.'],
+['탑을 세운 마음 부자','당신은 가진 것을 모두 탑 세우는 일에 보탰어요. 곡식 한 줌 남지 않았지만 손은 오히려 가벼웠어요.','탑이 하늘 높이 올라간 날, 사람들은 당신을 마음 부자라고 불렀어요. 탑 그림자 아래 향 냄새가 오래오래 남았어요.'],
+['빚쟁이 노비','흉년과 빚이 목을 조여 왔고, 끝내 당신은 빚을 갚으려고 자기 몸을 팔아 노비가 되었어요.','삼베 소매로 눈물을 훔치며 당신은 다짐했어요. "이 사슬은 내 대에서 끊을 거야."'],
+['무너진 성벽의 영웅','성벽이 무너지던 순간, 당신은 동료들을 밀어내고 돌무더기 아래로 몸을 던졌어요.','성은 끝내 완성되었고, 성돌 하나하나에는 이름 없는 영웅의 땀과 용기가 스며 있었어요.']],
+귀:[
+['나라를 이끈 지배자','귀족 회의의 판이 당신의 한마디에 뒤집혔어요. 왕은 당신을 곁에 앉혔어요.','권력은 비단옷보다 무거웠지만, 당신은 끝까지 나라의 중요한 일을 올바르게 결정했어요.'],
+['반짝이는 결혼식','이웃나라와의 결혼식은 눈부셨어요. 금과 은 장신구가 번쩍번쩍했지만 신부의 눈은 먼 곳을 보고 있었어요.','기와집 깊은 방에서 당신은 외로운 부귀영화를 헤아렸어요. 반짝이는 것이 다 행복은 아니었어요.'],
+['금동 부처님의 빛','당신은 금동 부처님을 세워 흩어진 백성의 마음을 하나로 모았어요.','세월이 지나도 부처님의 빛은 변하지 않았고, 당신은 따뜻한 귀족으로 오래오래 기억되었어요.'],
+['비단옷을 잃은 귀족','라이벌의 음모는 소리 없이 다가와 당신의 비단옷을 벗겼어요. 기와집의 문이 쾅 닫혔어요.','삼베옷을 입은 당신은 태어나서 처음으로 흙냄새를 맡았어요. 처음으로 진짜 하늘을 본 것 같았어요.'],
+['놀기만 한 귀족의 최후','쌀밥과 금 장신구에만 푹 빠진 날들이 이어졌고, 곳간은 하나둘 텅 비었어요.','가문은 무너졌고 기와집의 불빛도 꺼졌어요. 화려했던 이름은 사람들 기억에서 사라졌어요.']]};
+const SUMMARY=['신분 제도: 귀족, 평민, 천민으로 나뉘었고 신분에 따라 생활 모습이 달랐어요.','귀족은 땅과 노비가 많고 높은 관리가 되어 나라의 중요한 일을 정했어요.','평민은 대부분 농사를 짓고, 나라에 세금을 내고, 성이나 궁궐을 쌓는 일에 불려 갔어요.','천민은 대부분 노비로, 귀족의 땅에서 농사를 짓거나 주인집 일을 했어요.','옷: 저고리와 바지를 입었고, 높은 사람은 비단옷과 금·은 장신구, 평민은 주로 삼베옷을 입었어요.','음식: 높은 사람은 귀한 쌀, 평민은 보리·조 같은 잡곡을 주로 먹었어요.','집: 높은 사람은 기와집, 평민은 주로 초가집에서 살았어요.','종교: 백성의 마음을 모으고 왕의 힘을 키우려고 불교를 받아들여 절, 탑, 불상을 만들었어요. (금동 연가 7년명 여래 입상-고구려, 정림사지 오층 석탑-백제)','가야는 철로 무기와 갑옷을 만들고 팔 만큼 철 다루는 기술이 뛰어났고, 고분의 토기로 그때 생활을 짐작할 수 있어요.'];
+let S={};
+const store={get(){try{return JSON.parse(localStorage.getItem('samguk_saga_end')||'[]')}catch(e){return[]}},add(k){try{const a=this.get();if(!a.includes(k)){a.push(k);localStorage.setItem('samguk_saga_end',JSON.stringify(a))}}catch(e){}}};
+const has=x=>S.bag.includes(x)||S.fl.has(x);
+const cl=v=>Math.max(0,Math.min(100,v));
+function home(){
+ $('#app').innerHTML=`<h1>삼국시대 대서사시</h1><p class="sub">나는 누구로 태어날까? 내 선택이 내 인생을 바꿔요!</p><div class="cls">
+ <button data-c="귀"><b>👑 귀족</b><br>300냥 부자! 비단옷, 기와집, 그리고 으스대는 라이벌들</button>
+ <button data-c="평"><b>🌾 평민</b><br>40냥 알뜰살림! 농사, 세금, 씨름 대회, 그리고 단짝</button>
+ <button data-c="천"><b>⛓️ 천민</b><br>10냥 뿐! 대신 꾀와 용기로 운명을 바꿔 보자</button></div>
+ <div class="row"><button id="dg">📖 엔딩 도감 (${store.get().length}/15)</button><button id="sm">📜 역사 요약</button></div>`;
+ document.querySelectorAll('.cls button').forEach(b=>b.onclick=()=>start(b.dataset.c));
+ $('#dg').onclick=dogam;$('#sm').onclick=()=>modal('<h3>오늘 배운 삼국시대 역사</h3><ul>'+SUMMARY.map(s=>'<li>'+s+'</li>').join('')+'</ul>');
+}
+function modal(h){$('#mbox').innerHTML=h+'<div class="row"><button id="mc">닫기</button></div>';$('#modal').classList.add('on');$('#mc').onclick=()=>$('#modal').classList.remove('on')}
+function dogam(){
+ const seen=store.get();let h='<h3>엔딩 도감</h3>';
+ for(const c of ['천','평','귀']){h+=`<b>${CN[c]}</b><ul class="dg">`+E[c].map((e,i)=>seen.includes(c+i)?`<li class="seen">✔ ${e[0]}</li>`:'<li class="nope">???? (미확인 서사)</li>').join('')+'</ul><br>'}
+ modal(h);
+}
+function start(c){
+ const s=START[c];
+ S={c,hp:s[0],gold:s[1],vir:s[2],wit:s[3],bag:[],fl:new Set(),mem:[],t:0,si:0,qi:0,qz:QZ.map(q=>q).sort(()=>Math.random()-.5)};
+ next();
+}
+function hud(){
+ const bars=[['체력',S.hp,'#b23a2e'],['마음씨',S.vir,'#2f6b4f'],['똑똑함',S.wit,'#1f5c6b']];
+ const bag=S.bag.length?S.bag.map(i=>ITEMS[i][0]).join(' · '):'비어 있음';
+ return `<div class="turn">${CN[S.c]} · ${S.t+1} / ${SEQ.length}장</div><div class="hud">${bars.map(b=>`<div>${b[0]} ${b[1]}<div class="bar"><i style="width:${b[1]}%;background:${b[2]}"></i></div></div>`).join('')}<div>💰 <b>${S.gold}</b>냥</div></div><div class="bag">🎒 가방: ${bag}</div>`;
+}
+function next(){
+ if(S.hp<=0||S.t>=SEQ.length)return end();
+ const k=SEQ[S.t];
+ if(k==='s')scene();else if(k==='h')shop();else quiz();
+}
+function scene(){
+ const sc=SC[S.c][S.si];
+ $('#app').innerHTML=hud()+`<div class="scene">${sc.x}</div><div class="ch" id="ch"></div><div class="toast" id="ts"></div>`;
+ sc.c.forEach(ch=>{
+  const b=document.createElement('button');const ok=!ch.n||has(ch.n);
+  b.textContent=(ok?'':'🔒 ['+(ITEMS[ch.n]?ITEMS[ch.n][0]+' 필요':'지난 이야기가 열쇠!')+'] ')+ch.t;b.disabled=!ok;
+  b.onclick=()=>{apply(ch.e,ch);S.si++;done(ch.e)};
+  $('#ch').appendChild(b);
+ });
+ const locked=sc.c.filter(c=>c.n&&!has(c.n)).length;
+ if(locked)$('#ts').textContent='🔒 가방 속 물건이나 지난 선택이 있으면 열리는 길이 있어요!';
+}
+function apply(e,ch){
+ S.hp=cl(S.hp+e[0]);S.gold=Math.max(0,S.gold+e[1]);S.vir=cl(S.vir+e[2]);S.wit=cl(S.wit+e[3]);
+ if(ch&&ch.f)S.fl.add(ch.f);if(ch&&ch.m)S.mem.push(ch.m);
+}
+function done(e){
+ const t=e.map((v,i)=>v?HEAD[i]+(v>0?' +':' ')+v:'').filter(Boolean).join('  ');
+ document.querySelectorAll('#ch button').forEach(b=>b.disabled=true);
+ $('#ts').textContent=t||'조용히 시간이 흘렀습니다.';
+ S.t++;setTimeout(next,1300);
+}
+function shop(){
+ const L=SHOP[S.c];
+ $('#app').innerHTML=hud()+`<div class="scene">${SHOPTXT[S.c]}</div><div class="sh" id="sh"></div><div class="row"><button id="go">다 샀어요! 출발~</button></div>`;
+ Object.keys(L).forEach(k=>{
+  const b=document.createElement('button');const own=S.bag.includes(k);
+  b.textContent=`${ITEMS[k][0]} — ${L[k]}냥 (${ITEMS[k][1]})${own?' ✔ 샀어요':''}`;
+  b.disabled=own||S.gold<L[k];
+  b.onclick=()=>{S.gold-=L[k];S.bag.push(k);shop()};
+  $('#sh').appendChild(b);
+ });
+ $('#go').onclick=()=>{S.t++;next()};
+}
+function quiz(){
+ const q=S.qz[S.qi++];const opts=q[1].map((t,i)=>({t,ok:i===0})).sort(()=>Math.random()-.5);
+ $('#app').innerHTML=hud()+`<div class="scene">📜 서당 훈장이 돌판을 내려놓으며 묻습니다.\n\n${q[0]}</div><div class="ch" id="ch"></div><div class="toast" id="ts"></div>`;
+ opts.forEach(o=>{
+  const b=document.createElement('button');b.textContent=o.t;
+  b.onclick=()=>{
+   document.querySelectorAll('#ch button').forEach(x=>x.disabled=true);
+   if(o.ok){S.wit=cl(S.wit+10);S.vir=cl(S.vir+2);S.mem.push('서당에서 배운 역사 한 줄이 마음에 오래 남았고');$('#ts').textContent='⭕ 정답! 지혜 +10 · '+q[2]}
+   else{S.hp=cl(S.hp-5);$('#ts').textContent='❌ 아쉬워요. 체력 -5 · '+q[2]}
+   S.t++;setTimeout(next,2400);
+  };
+  $('#ch').appendChild(b);
+ });
+}
+function pick(){
+ const c=S.c,hp=S.hp;
+ if(c==='천'){
+  if(hp<=15)return 4;
+  if(has('flee'))return 1;
+  if(has('freed')&&has('cure'))return 0;
+  if(has('forge')&&S.wit>=35)return 2;
+  return 3;
+ }
+ if(c==='평'){
+  if(hp<=15)return has('save')?4:3;
+  if(S.gold<=0&&has('debt'))return 3;
+  if(has('rank')&&has('war'))return 1;
+  if(has('tower'))return 2;
+  return 0;
+ }
+ if(has('weak')&&S.vir<35)return 3;
+ if(has('greed')&&S.vir<40)return 4;
+ if(has('built'))return 2;
+ if(has('rule')&&S.wit>=55)return 0;
+ if(has('marry'))return 1;
+ return 0;
+}
+function end(){
+ const i=S.hp<=0?4:pick();const e=E[S.c][i];
+ if(S.hp<=0&&S.c==='귀')return fallback();
+ store.add(S.c+i);
+ const m=S.mem,ps=[e[1]];
+ if(m[0])ps.push('돌이켜 보면, '+m.slice(0,2).join(' ')+'…');
+ if(m[2])ps.push(m.slice(2,4).join(' ')+'…');
+ if(m[4])ps.push(m.slice(4,7).join(' ')+'…');
+ ps.push(S.bag.length?`가방 속 ${S.bag.map(x=>ITEMS[x][0]).join(', ')}이(가) 말없이 당신의 길을 지켜 주었어요. 마음씨 ${S.vir}, 똑똑함 ${S.wit}. 숫자로는 다 적을 수 없는 하루하루였어요.`:`가방은 끝내 비어 있었지만, 마음씨 ${S.vir}과 똑똑함 ${S.wit}만큼은 누구도 빼앗지 못했어요.`);
+ ps.push(e[2]);
+ $('#app').innerHTML=`<div class="end"><div class="turn">${CN[S.c]}의 엔딩</div><h2>${e[0]}</h2><div id="ps"></div><div class="row hide" id="rw"><button id="sm2">📜 오늘 배운 역사 요약 카드</button><button id="dg2">📖 엔딩 도감</button><button id="re">🔁 다른 인생 살기</button></div></div>`;
+ ps.forEach((t,k)=>{const p=document.createElement('p');p.textContent=t;$('#ps').appendChild(p);
+  setTimeout(()=>{p.classList.add('on');p.scrollIntoView({behavior:'smooth',block:'center'})},900+k*1800)});
+ setTimeout(()=>{$('#rw').classList.remove('hide');$('#sm2').onclick=()=>modal('<h3>오늘 배운 삼국시대 역사</h3><ul>'+SUMMARY.map(s=>'<li>'+s+'</li>').join('')+'</ul>');$('#dg2').onclick=dogam;$('#re').onclick=home;$('#rw').scrollIntoView({behavior:'smooth',block:'end'})},900+ps.length*1800);
+}
+function fallback(){S.hp=1;end()}
+home();
+</script>
+</body>
+</html>
